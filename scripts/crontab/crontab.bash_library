@@ -1,0 +1,91 @@
+# To use this Bash library:
+# Top of your crontab script:
+# Line1: #!/bin/bash --login
+# Line2: source "$(dirname "$0")/crontab.bash_library" '/path/to/log/directory' "$@"
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+# Treat unset variables as an error when substituting.
+set -u
+# The return value of a pipeline is the status of
+# the last command to exit with a non-zero status,
+# or zero if no command exited with a non-zero status
+set -o pipefail
+# Print commands and their arguments as they are executed.
+# set -x
+
+__exit_handler()
+{
+    local exit_code=$?
+    if [ 0 = $exit_code ]
+    then
+        local prefix='INFO '
+    else
+        local prefix='ERROR'
+    fi
+    printf -- '\n%s: %s @ %s: Exit with status code [%d]: %s\n\n' \
+              "$prefix"                                         \
+              "$(whoami)"                                       \
+              "$(hostname --fqdn)"                              \
+              $exit_code                                        \
+              "$0"
+}
+
+trap __exit_handler EXIT
+
+crontab_echo_cmd()
+{
+    echo
+    echo '$' "$@"
+}
+
+crontab_echo_and_run_cmd()
+{
+    crontab_echo_cmd "$@"
+    "$@"
+}
+
+__crontab_main()
+{
+    if [ 0 = $# ]
+    then
+        printf -- '\n'
+        printf -- 'ERROR: Expected at least one argument: Log directory\n'
+        printf -- 'Example: /path/to/log_dir\n'
+        printf -- '\n'
+        exit 1
+    fi
+    local log_dir_path="$1" ; shift
+    # Remaining args in "$@"
+
+    if [[ ! "$log_dir_path" =~ ^/ ]]
+    then
+        printf -- '\n'
+        printf -- 'ERROR: Log dir path must be absolute: [%s]\n' "$log_dir_path"
+        printf -- '\n'
+        exit 1
+    fi
+
+    local log_file_path="$log_dir_path/$(basename "$0").$(date '+%Y%m%d_%H%M%S').$(whoami).$(hostname --short).${RANDOM}.log"
+    printf -- 'log_file_path="%s"\n' "$log_file_path"
+
+    if [[ ! -d "$log_dir_path" ]]
+    then
+        mkdir --parents "$log_dir_path"
+    fi
+
+    # Redirect STDOUT to child process
+    exec 1> >(tee "$log_file_path")
+    # Redirect STDERR to STDOUT
+    exec 2>&1
+
+    printf -- "\n%s @ %s : %s $ %s %s\n\n" \
+              "$(whoami)"                  \
+              "$(hostname --fqdn)"         \
+              "$PWD"                       \
+              "$(readlink -f "$0")"        \
+              "$*"
+}
+
+__crontab_main "$@"
+

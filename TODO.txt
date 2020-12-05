@@ -1,0 +1,2 @@
+Create an interactive tool to update pom.xml with latest versions of JARs
+Upgrade Suruga Bank project to use new kevinarpe-papaya Chrome DevTools stuff.
