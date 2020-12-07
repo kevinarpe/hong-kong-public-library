@@ -4,13 +4,12 @@ import com.github.kklisura.cdt.protocol.events.page.LoadEventFired;
 import com.github.kklisura.cdt.protocol.support.types.EventHandler;
 import com.github.kklisura.cdt.protocol.types.page.Navigate;
 import com.googlecode.kevinarpe.papaya.annotation.Blocking;
+import com.googlecode.kevinarpe.papaya.annotation.OutputParam;
 import com.googlecode.kevinarpe.papaya.argument.ObjectArgs;
 import com.googlecode.kevinarpe.papaya.exception.ExceptionThrower;
 import com.googlecode.kevinarpe.papaya.function.count.ExactlyCountMatcher;
-import com.googlecode.kevinarpe.papaya.function.retry.BasicRetryStrategyImp;
 import com.googlecode.kevinarpe.papaya.function.retry.RetryService;
 import com.googlecode.kevinarpe.papaya.function.retry.RetryStrategyFactory;
-import com.googlecode.kevinarpe.papaya.logging.slf4j.IncludeStackTrace;
 import com.googlecode.kevinarpe.papaya.logging.slf4j.LoggerLevel;
 import com.googlecode.kevinarpe.papaya.logging.slf4j.LoggerService;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.Chrome;
@@ -20,7 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.time.Duration;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static com.googlecode.kevinarpe.papaya.annotation.OutputParams.out;
 
 /**
  * @author Kevin Connor ARPE (kevinarpe@gmail.com)
@@ -33,11 +36,13 @@ implements HkplWebLoginService {
 
     private final ChromeDevToolsDomQuerySelectorFactory domQuerySelectorFactory;
     private final RetryService retryService;
+    private final RetryStrategyFactory retryStrategyFactory;
     private final LoggerService loggerService;
     private final ExceptionThrower exceptionThrower;
 
     public HkplWebLoginServiceImp(ChromeDevToolsDomQuerySelectorFactory domQuerySelectorFactory,
                                   RetryService retryService,
+                                  RetryStrategyFactory retryStrategyFactory,
                                   LoggerService loggerService,
                                   ExceptionThrower exceptionThrower) {
 
@@ -45,29 +50,25 @@ implements HkplWebLoginService {
             ObjectArgs.checkNotNull(domQuerySelectorFactory, "domQuerySelectorFactory");
 
         this.retryService = ObjectArgs.checkNotNull(retryService, "retryService");
-
+        this.retryStrategyFactory = ObjectArgs.checkNotNull(retryStrategyFactory, "retryStrategyFactory");
         this.loggerService = ObjectArgs.checkNotNull(loggerService, "loggerService");
-
         this.exceptionThrower = ObjectArgs.checkNotNull(exceptionThrower, "exceptionThrower");
     }
 
     @Blocking
     @Override
-    public boolean
-    tryDoLogin(Chrome chrome,
-               HkplWebUserCredentials userCredentials)
+    public void
+    doLogin(Chrome chrome, HkplWebUserCredentials userCredentials)
     throws Exception {
 
-        final Object lock = new Object();
+        final boolean isFairLock = false;
+        final Lock lock = new ReentrantLock(isFairLock);
+        final Condition lockCondition = lock.newCondition();
+        // @GuardedBy("lock")
         boolean[] isDoneRef = {false};
+        final Exception[] exceptionRef = {null};
 
-        final RetryStrategyFactory retryStrategyFactory =
-            BasicRetryStrategyImp.factoryBuilder()
-                .maxRetryCount(9)
-                .beforeRetrySleepDuration(Duration.ofMillis(100))
-                .build();
-
-        chrome.chromeTab0.getData().page.onLoadEventFired(new EventHandler<LoadEventFired>() {
+        chrome.chromeTab0.getPage().onLoadEventFired(new EventHandler<LoadEventFired>() {
 
             private int count = 0;
 
@@ -102,33 +103,23 @@ implements HkplWebLoginService {
                                 .awaitQuerySelectorByIndex("a.ac_login_btn", 1, retryStrategyFactory)
                                 .click();
 
-                            synchronized (lock) {
-                                isDoneRef[0] = true;
-                                lock.notify();
-                            }
+                            _setDone(lock, out(isDoneRef), lockCondition);
                             break;
                         }
                         default: {
-                            loggerService.formatThenLog(logger, LoggerLevel.INFO,
-                                "%s #%d", event.getClass().getSimpleName(), count);
-
-                            synchronized (lock) {
-                                isDoneRef[0] = true;
-                                lock.notify();
-                            }
+                            throw exceptionThrower.throwCheckedException(Exception.class,
+                                "Internal error: Missing switch case %d", count);
                         }
                     }
                 }
                 catch (Exception e) {
 
-                    loggerService.logThrowableWithDefaultMessage(
-                        logger, LoggerLevel.ERROR, IncludeStackTrace.UNIQUE_ONLY, e);
-
-                    chrome.chromeTab0.getData().chromeDevToolsService.close();
+                    exceptionRef[0] = e;
+                    _setDone(lock, out(isDoneRef), lockCondition);
                 }
             }
         });
-        chrome.chromeTab0.getData().page.enable();
+        chrome.chromeTab0.getPage().enable();
 /*
 03:20:52.974 [main] DEBUG com.github.kklisura.cdt.services.impl.WebSocketServiceImpl -
 Sending message {"id":2,"method":"Page.navigate","params":{"url":"https://www.hkpl.gov.hk/en/index.html"}}
@@ -146,7 +137,7 @@ loaderId = "7D5D2B614F86A4030F7F6E871369198D"
         final Navigate navigate = retryService.call(retryStrategyFactory,
             () -> {
                 final String url = "https://www.hkpl.gov.hk/en/index.html";
-                final Navigate n = chrome.chromeTab0.getData().page.navigate(url);
+                final Navigate n = chrome.chromeTab0.getPage().navigate(url);
                 @Nullable
                 final String errorText = n.getErrorText();
                 if (null != errorText) {
@@ -155,14 +146,45 @@ loaderId = "7D5D2B614F86A4030F7F6E871369198D"
                 }
                 return n;
             });
-        synchronized (lock) {
+
+        _awaitDone(lock, lockCondition, isDoneRef);
+
+        if (null != exceptionRef[0]) {
+            throw exceptionRef[0];
+        }
+
+        chrome.chromeTab0.getPage().disable();
+    }
+
+    private void
+    _setDone(Lock lock,
+             @OutputParam boolean[] isDoneRef,
+             Condition lockCondition) {
+
+        lock.lock();
+        isDoneRef[0] = true;
+        try {
+            lockCondition.signal();
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    private void
+    _awaitDone(Lock lock,
+               Condition lockCondition,
+               boolean[] isDoneRef)
+    throws Exception {
+
+        lock.lock();
+        try {
             while (false == isDoneRef[0]) {
-                // TODO: Add timeout.  Sometimes the main page hangs when loading.  This is an HKPL issue!
-                lock.wait();
+                lockCondition.await();
             }
         }
-        chrome.chromeTab0.getData().page.disable();
-        final boolean success = (false == chrome.chromeTab0.getData().chromeDevToolsService.isClosed());
-        return success;
+        finally {
+            lock.unlock();
+        }
     }
 }

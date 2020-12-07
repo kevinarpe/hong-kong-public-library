@@ -28,15 +28,13 @@
         <maven-jxr-plugin.version>3.0.0</maven-jxr-plugin.version>
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
 
-        <kevinarpe-papaya.version>0.0.30</kevinarpe-papaya.version>
+        <kevinarpe-papaya.version>0.0.31</kevinarpe-papaya.version>
         <testng.version>7.1.0</testng.version>
 <!--        <mockito-core.version>3.6.0</mockito-core.version>-->
         <guava.version>30.0-jre</guava.version>
         <jsr305.version>3.0.2</jsr305.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
         <logback-classic.version>1.2.3</logback-classic.version>
-        <sqlite-jdbc.version>3.32.3.2</sqlite-jdbc.version>
-        <jooq.version>3.14.3</jooq.version>
         <cdt-java-client.version>2.1.0</cdt-java-client.version>
         <jericho-html.version>3.4</jericho-html.version>
         <jcommander.version>1.78</jcommander.version>
@@ -106,16 +104,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.xerial</groupId>
-            <artifactId>sqlite-jdbc</artifactId>
-            <version>${sqlite-jdbc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jooq</groupId>
-            <artifactId>jooq</artifactId>
-            <version>${jooq.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.kklisura.cdt</groupId>

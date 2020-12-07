@@ -118,7 +118,7 @@ implements HkplWebCheckedOutService {
 
         final JerichoHtmlSource jerichoHtmlSourceTableHeaderRow =
             new JerichoHtmlSource(
-                chromeTab.getData().chromeTab.getTitle() + ":tableHeaderRowHtml", tableHeaderRowHtml);
+                chromeTab.getChromeTab().getTitle() + ":tableHeaderRowHtml", tableHeaderRowHtml);
 
         @ReadOnlyContainer
         final List<Element> thElementList =
@@ -202,11 +202,11 @@ implements HkplWebCheckedOutService {
             final ChromeDevToolsDomNode tableBodyRowDomNode = tableBodyRowDomNodeList.get(i);
 
             final String tableBodyRowHtml =
-                chromeTab.getData().dom.getOuterHTML(tableBodyRowDomNode.nodeId(), null, null);
+                chromeTab.getDOM().getOuterHTML(tableBodyRowDomNode.nodeId(), null, null);
 
             final JerichoHtmlSource jerichoHtmlSourceTableBodyRow =
                 new JerichoHtmlSource(
-                    chromeTab.getData().chromeTab.getTitle() + ":tableBodyRowHtml:" + i, tableBodyRowHtml);
+                    chromeTab.getChromeTab().getTitle() + ":tableBodyRowHtml:" + i, tableBodyRowHtml);
 
             @Nullable
             final _Data data = _tryGetTdElements(i, tableHeaderToIndexMap, jerichoHtmlSourceTableBodyRow);

@@ -57,18 +57,18 @@ public final class HkplRenewalMain {
         final HkplWebUserCredentials userCredentials =
             new HkplWebUserCredentials(args.hkplWebUsername(), args.hkplWebPassword());
 
-        if (appContext.getHkplWebLoginService().tryDoLogin(chrome, userCredentials)) {
+        appContext.getHkplWebLoginService().doLogin(chrome, userCredentials);
 
-            final HkplWebCheckedOutService.Result checkedOut = appContext.getHkplWebCheckedOutService().parse(chrome);
+        final HkplWebCheckedOutService.Result checkedOut = appContext.getHkplWebCheckedOutService().parse(chrome);
 
-            final int daysBeforeLastDay = 1;
-            final HkplWebRenewalService.Result renewalResult =
-                appContext.getHkplWebRenewalService().renew(chrome, checkedOut, daysBeforeLastDay);
+        final int daysBeforeLastDay = 1;
+        final HkplWebRenewalService.Result renewalResult =
+            appContext.getHkplWebRenewalService().renew(chrome, checkedOut, daysBeforeLastDay);
 
-            appContext.getHkplWebRenewalEmailService().sendMessage(renewalResult);
+        appContext.getHkplWebRenewalEmailService().sendMessage(renewalResult);
 
-            checkedOut.chromeTab.awaitClose(appContext.getRetryStrategyMap().get(RetryStrategyType.SHORT));
-        }
+        checkedOut.chromeTab.awaitClose(appContext.getRetryStrategyMap().get(RetryStrategyType.SHORT));
+
         chrome.chromeTab0.awaitClose(appContext.getRetryStrategyMap().get(RetryStrategyType.SHORT));
         chrome.chromeLauncher.close();
         logger.info("Done");

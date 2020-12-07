@@ -97,16 +97,9 @@ implements AppContext {
 
         final ChromeDevToolsAppContext chromeDevToolsAppContext = new ChromeDevToolsAppContext(messageFormatter);
 
-        final RetryService retryService = new RetryServiceImp(CollectionIndexMatcher.FIRST_AND_LAST_ONLY);
-
         this.chromeLauncherService = chromeDevToolsAppContext.chromeLauncherService;
 
-        this.hkplWebLoginService =
-            new HkplWebLoginServiceImp(
-                chromeDevToolsAppContext.chromeDevToolsDomQuerySelectorFactory,
-                retryService,
-                loggerService,
-                exceptionThrower);
+        final RetryService retryService = new RetryServiceImp(CollectionIndexMatcher.FIRST_AND_LAST_ONLY);
 
         this.retryStrategyMap =
             ImmutableFullEnumMap.<RetryStrategyType, RetryStrategyFactory>builder(RetryStrategyType.class)
@@ -121,6 +114,14 @@ implements AppContext {
                         .beforeRetrySleepDuration(Duration.ofSeconds(1))
                         .build())
                 .build();
+
+        this.hkplWebLoginService =
+            new HkplWebLoginServiceImp(
+                chromeDevToolsAppContext.chromeDevToolsDomQuerySelectorFactory,
+                retryService,
+                retryStrategyMap.getByEnum(RetryStrategyType.SHORT),
+                loggerService,
+                exceptionThrower);
 
         final JerichoHtmlParserService jerichoHtmlParserService =
             new JerichoHtmlParserServiceImp(exceptionThrower);

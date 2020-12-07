@@ -229,7 +229,7 @@ implements HkplWebRenewalService {
 
         final Boolean isChecked =
             runtimeService.evaluateJavaScriptExpression(
-                checkedOut.chromeTab.getData().runtime,
+                checkedOut.chromeTab.getRuntime(),
                 jsTickTheBox,
                 IncludeCommandLineAPI.NO,
                 ChromeDevToolsJavaScriptRemoteObjectType.BOOLEAN,
@@ -264,9 +264,9 @@ implements HkplWebRenewalService {
                     &&
                     PATTERN_PAGE_TITLE_AFTER_RENEWAL.matcher(_chromeTab.getTitle()).find());
 
-        final Node documentNode = checkedOut.chromeTab.getData().dom.getDocument();
+        final Node documentNode = checkedOut.chromeTab.getDOM().getDocument();
         final Integer documentNodeId = documentNode.getNodeId();
-        final String html = checkedOut.chromeTab.getData().dom.getOuterHTML(documentNodeId, null, null);
+        final String html = checkedOut.chromeTab.getDOM().getOuterHTML(documentNodeId, null, null);
         final JerichoHtmlSource jerichoHtmlSource = new JerichoHtmlSource("After renewal", html);
         final String text = jerichoHtmlSource.source.getRenderer().toString();
         final String expectedText = "Renewal Results";

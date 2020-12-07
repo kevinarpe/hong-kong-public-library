@@ -9,7 +9,6 @@ import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.Chrome;
 public interface HkplWebLoginService {
 
     @Blocking
-    boolean tryDoLogin(Chrome chrome,
-                       HkplWebUserCredentials userCredentials)
+    void doLogin(Chrome chrome, HkplWebUserCredentials userCredentials)
     throws Exception;
 }
