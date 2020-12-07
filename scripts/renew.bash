@@ -1,8 +1,8 @@
 #!/bin/bash --login
 
 # Ex: /home/kca/saveme/git/hong-kong-public-library
-PROJECT_DIR_PATH="$(readlink -f "$(dirname "$(dirname "$(dirname "$0")")")")"
-source "$PROJECT_DIR_PATH/scripts/crontab/crontab.bash_library" "$PROJECT_DIR_PATH/log" "$@"
+PROJECT_DIR_PATH="$(readlink -f "$(dirname "$(dirname "$0")")")"
+source "$PROJECT_DIR_PATH/scripts/bashlib" "$PROJECT_DIR_PATH/log" "$@"
 
 JAR_FILE_PATH="$PROJECT_DIR_PATH/target/hong-kong-public-library-1.0.0-SNAPSHOT.jar"
 
@@ -11,22 +11,22 @@ main()
     # Command line args stored in "$@"
     check_args "$@"
 #
-#    crontab_echo_and_run_cmd \
+#    bashlib_echo_and_run_cmd \
 #        export JAVA_HOME='/home/kca/saveme/jdk-11'
 #
-#    crontab_echo_and_run_cmd \
+#    bashlib_echo_and_run_cmd \
 #        ls -l "$JAVA_HOME/bin/java"
 #
-#    crontab_echo_and_run_cmd \
+#    bashlib_echo_and_run_cmd \
 #        export PATH="$JAVA_HOME/bin:$PATH"
 
-    crontab_echo_and_run_cmd \
+    bashlib_echo_and_run_cmd \
         which java
 
-    crontab_echo_and_run_cmd \
+    bashlib_echo_and_run_cmd \
         java -version
 
-    crontab_echo_and_run_cmd \
+    bashlib_echo_and_run_cmd \
         cd "$PROJECT_DIR_PATH"
 
     # Class-Path:
@@ -34,7 +34,7 @@ main()
     # 2) $CLASSES_DIR_PATH: Must appear before $JAR_FILE_PATH b/c IntelliJ will build class files, but not JARs.
     # 3) $JAR_FILE_PATH: Must appear after $CLASSES_DIR_PATH b/c MANIFEST file has Class-Path for dependent JARs.
 
-    crontab_echo_and_run_cmd \
+    bashlib_echo_and_run_cmd \
         java -classpath "$PROJECT_DIR_PATH:$JAR_FILE_PATH" com.github.kevinarpe.hkpl.main.HkplRenewalMain "$@"
 }
 

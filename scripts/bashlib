@@ -33,19 +33,19 @@ __exit_handler()
 
 trap __exit_handler EXIT
 
-crontab_echo_cmd()
+bashlib_echo_cmd()
 {
     echo
     echo '$' "$@"
 }
 
-crontab_echo_and_run_cmd()
+bashlib_echo_and_run_cmd()
 {
-    crontab_echo_cmd "$@"
+    bashlib_echo_cmd "$@"
     "$@"
 }
 
-__crontab_main()
+__bashlib_main()
 {
     if [ 0 = $# ]
     then
@@ -87,5 +87,4 @@ __crontab_main()
               "$*"
 }
 
-__crontab_main "$@"
-
+__bashlib_main "$@"
