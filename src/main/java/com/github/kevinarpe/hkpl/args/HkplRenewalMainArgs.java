@@ -15,14 +15,14 @@ import javax.annotation.Nullable;
 public final class HkplRenewalMainArgs
 implements Args {
 
-    public static final String CHROME_HEADLESS = "--chrome-headless";
-    public static final String HKPL_WEB_USERNAME = "--hkpl-web-username";
-    public static final String HKPL_WEB_PASSWORD = "--hkpl-web-password";
-    public static final String SMTP_HOST = "--smtp-host";
-    public static final String SMTP_PORT = "--smtp-port";
-    public static final String EMAIL_ADDRESS = "--email-address";
-    public static final String SMTP_USERNAME = "--smtp-username";
-    public static final String SMTP_PASSWORD = "--smtp-password";
+    private static final String CHROME_HEADLESS = "--chrome-headless";
+    private static final String HKPL_WEB_USERNAME = "--hkpl-web-username";
+    private static final String HKPL_WEB_PASSWORD = "--hkpl-web-password";
+    private static final String SMTP_HOST = "--smtp-host";
+    private static final String SMTP_PORT = "--smtp-port";
+    private static final String EMAIL_ADDRESS = "--email-address";
+    private static final String SMTP_USERNAME = "--smtp-username";
+    private static final String SMTP_PASSWORD = "--smtp-password";
 
     public HkplRenewalMainArgs() {
         // Empty
