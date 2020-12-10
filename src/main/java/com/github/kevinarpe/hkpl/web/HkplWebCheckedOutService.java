@@ -35,7 +35,6 @@ public interface HkplWebCheckedOutService {
 
             this.chromeTab = ObjectArgs.checkNotNull(chromeTab, "chromeTab");
             this.rowList = ObjectArgs.checkNotNull(rowList, "rowList");
-
         }
 
         public static final class Row {

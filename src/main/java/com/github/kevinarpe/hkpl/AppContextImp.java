@@ -1,5 +1,15 @@
 package com.github.kevinarpe.hkpl;
 
+import com.github.kevinarpe.hkpl.email.HkplSendEmailService;
+import com.github.kevinarpe.hkpl.web.HkplWebCheckedOutService;
+import com.github.kevinarpe.hkpl.web.HkplWebCheckedOutServiceImp;
+import com.github.kevinarpe.hkpl.web.HkplWebLoginService;
+import com.github.kevinarpe.hkpl.web.HkplWebLoginServiceImp;
+import com.github.kevinarpe.hkpl.web.HkplWebRenewalEmailService;
+import com.github.kevinarpe.hkpl.web.HkplWebRenewalEmailServiceImp;
+import com.github.kevinarpe.hkpl.web.HkplWebRenewalService;
+import com.github.kevinarpe.hkpl.web.HkplWebRenewalServiceImp;
+import com.github.kevinarpe.hkpl.web.RetryStrategyType;
 import com.googlecode.kevinarpe.papaya.container.ImmutableFullEnumMap;
 import com.googlecode.kevinarpe.papaya.exception.ExceptionThrower;
 import com.googlecode.kevinarpe.papaya.exception.ExceptionThrowerImpl;
@@ -17,18 +27,8 @@ import com.googlecode.kevinarpe.papaya.time.Clock;
 import com.googlecode.kevinarpe.papaya.time.SystemClockImpl;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsAppContext;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeLauncherService;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.JerichoHtmlParserService;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.JerichoHtmlParserServiceImp;
-import com.github.kevinarpe.hkpl.email.HkplSendEmailService;
-import com.github.kevinarpe.hkpl.web.HkplWebCheckedOutService;
-import com.github.kevinarpe.hkpl.web.HkplWebCheckedOutServiceImp;
-import com.github.kevinarpe.hkpl.web.HkplWebLoginService;
-import com.github.kevinarpe.hkpl.web.HkplWebLoginServiceImp;
-import com.github.kevinarpe.hkpl.web.HkplWebRenewalEmailService;
-import com.github.kevinarpe.hkpl.web.HkplWebRenewalEmailServiceImp;
-import com.github.kevinarpe.hkpl.web.HkplWebRenewalService;
-import com.github.kevinarpe.hkpl.web.HkplWebRenewalServiceImp;
-import com.github.kevinarpe.hkpl.web.RetryStrategyType;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.JerichoHtmlParserService;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.JerichoHtmlParserServiceImp;
 
 import java.time.Duration;
 
@@ -130,7 +130,6 @@ implements AppContext {
             new HkplWebCheckedOutServiceImp(
                 chromeDevToolsAppContext.chromeService2,
                 retryStrategyMap,
-                chromeDevToolsAppContext.chromeDevToolsRuntimeService,
                 chromeDevToolsAppContext.chromeDevToolsDomQuerySelectorFactory,
                 jerichoHtmlParserService,
                 loggerService,

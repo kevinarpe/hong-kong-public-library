@@ -28,7 +28,7 @@
         <maven-jxr-plugin.version>3.0.0</maven-jxr-plugin.version>
         <maven-project-info-reports-plugin.version>3.1.1</maven-project-info-reports-plugin.version>
 
-        <kevinarpe-papaya.version>0.0.31</kevinarpe-papaya.version>
+        <kevinarpe-papaya.version>0.0.32</kevinarpe-papaya.version>
         <testng.version>7.1.0</testng.version>
 <!--        <mockito-core.version>3.6.0</mockito-core.version>-->
         <guava.version>30.0-jre</guava.version>
@@ -98,6 +98,11 @@
         <dependency>
             <groupId>com.googlecode.kevinarpe-papaya</groupId>
             <artifactId>kevinarpe-papaya-java-mail</artifactId>
+            <version>${kevinarpe-papaya.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.googlecode.kevinarpe-papaya</groupId>
+            <artifactId>kevinarpe-papaya-jericho-html-parser</artifactId>
             <version>${kevinarpe-papaya.version}</version>
         </dependency>
         <dependency>

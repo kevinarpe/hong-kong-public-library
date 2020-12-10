@@ -4,25 +4,25 @@ import com.github.kklisura.cdt.services.types.ChromeTab;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.googlecode.kevinarpe.papaya.annotation.EmptyContainerAllowed;
-import com.googlecode.kevinarpe.papaya.annotation.ReadOnlyContainer;
 import com.googlecode.kevinarpe.papaya.argument.CollectionArgs;
 import com.googlecode.kevinarpe.papaya.argument.IntArgs;
 import com.googlecode.kevinarpe.papaya.argument.ObjectArgs;
 import com.googlecode.kevinarpe.papaya.container.ImmutableFullEnumMap;
 import com.googlecode.kevinarpe.papaya.exception.ExceptionThrower;
 import com.googlecode.kevinarpe.papaya.function.count.AnyCountMatcher;
+import com.googlecode.kevinarpe.papaya.function.count.AtLeastCountMatcher;
+import com.googlecode.kevinarpe.papaya.function.count.AtMostCountMatcher;
 import com.googlecode.kevinarpe.papaya.function.retry.RetryStrategyFactory;
 import com.googlecode.kevinarpe.papaya.logging.slf4j.LoggerLevel;
 import com.googlecode.kevinarpe.papaya.logging.slf4j.LoggerService;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.Chrome;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsDomNode;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsDomQuerySelectorFactory;
-import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsRuntimeService;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsTab;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeService2;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.HtmlElementTag;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.JerichoHtmlParserService;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.JerichoHtmlSource;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.HtmlElementTag;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.JerichoHtmlParserService;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.JerichoHtmlSource;
 import net.htmlparser.jericho.Element;
 import net.htmlparser.jericho.Renderer;
 import org.slf4j.Logger;
@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +45,6 @@ implements HkplWebCheckedOutService {
 
     private final ChromeService2 chromeService2;
     private final ImmutableFullEnumMap<RetryStrategyType, RetryStrategyFactory> retryStrategyMap;
-    private final ChromeDevToolsRuntimeService runtimeService;
     private final ChromeDevToolsDomQuerySelectorFactory domQuerySelectorFactory;
     private final JerichoHtmlParserService jerichoHtmlParserService;
     private final LoggerService loggerService;
@@ -54,7 +52,6 @@ implements HkplWebCheckedOutService {
 
     public HkplWebCheckedOutServiceImp(ChromeService2 chromeService2,
                                        ImmutableFullEnumMap<RetryStrategyType, RetryStrategyFactory> retryStrategyMap,
-                                       ChromeDevToolsRuntimeService runtimeService,
                                        ChromeDevToolsDomQuerySelectorFactory domQuerySelectorFactory,
                                        JerichoHtmlParserService jerichoHtmlParserService,
                                        LoggerService loggerService,
@@ -62,7 +59,6 @@ implements HkplWebCheckedOutService {
 
         this.chromeService2 = ObjectArgs.checkNotNull(chromeService2, "chromeService2");
         this.retryStrategyMap = ObjectArgs.checkNotNull(retryStrategyMap, "retryStrategyMap");
-        this.runtimeService = ObjectArgs.checkNotNull(runtimeService, "runtimeService");
         this.domQuerySelectorFactory =
             ObjectArgs.checkNotNull(domQuerySelectorFactory, "domQuerySelectorFactory");
         this.jerichoHtmlParserService =
@@ -120,10 +116,9 @@ implements HkplWebCheckedOutService {
             new JerichoHtmlSource(
                 chromeTab.getChromeTab().getTitle() + ":tableHeaderRowHtml", tableHeaderRowHtml);
 
-        @ReadOnlyContainer
-        final List<Element> thElementList =
-            jerichoHtmlParserService.getNonEmptyElementListByTag(
-                jerichoHtmlSourceTableHeaderRow, jerichoHtmlSourceTableHeaderRow.source, HtmlElementTag.TH);
+        final ImmutableList<Element> thElementList =
+            jerichoHtmlParserService.getElementListByTag(jerichoHtmlSourceTableHeaderRow,
+                jerichoHtmlSourceTableHeaderRow.source, HtmlElementTag.TH, AtLeastCountMatcher.ONE);
 
         final ImmutableFullEnumMap.Builder<HkplWebCheckedOutTableHeader, Integer> b =
             ImmutableFullEnumMap.builder(HkplWebCheckedOutTableHeader.class);
@@ -200,9 +195,7 @@ implements HkplWebCheckedOutService {
         for (int i = 0; i < tableBodyRowCount; ++i) {
 
             final ChromeDevToolsDomNode tableBodyRowDomNode = tableBodyRowDomNodeList.get(i);
-
-            final String tableBodyRowHtml =
-                chromeTab.getDOM().getOuterHTML(tableBodyRowDomNode.nodeId(), null, null);
+            final String tableBodyRowHtml = tableBodyRowDomNode.getOuterHTML();
 
             final JerichoHtmlSource jerichoHtmlSourceTableBodyRow =
                 new JerichoHtmlSource(
@@ -215,7 +208,7 @@ implements HkplWebCheckedOutService {
             }
             @Nullable
             final Element nullableRenewalCheckboxTdElement =
-                _tryGetRenewalCheckboxTdElement(i, data.tableHeaderToTdElementMap);
+                _tryGetRenewalCheckboxTdElement(i, jerichoHtmlSourceTableBodyRow, data.tableHeaderToTdElementMap);
 
             final Result.Row.TdElement titleTdElement =
                 data.tableHeaderToTdElementMap.get(HkplWebCheckedOutTableHeader.TITLE);
@@ -258,11 +251,14 @@ implements HkplWebCheckedOutService {
     private _Data
     _tryGetTdElements(final int rowIndex,
                       ImmutableFullEnumMap<HkplWebCheckedOutTableHeader, Integer> tableHeaderToIndexMap,
-                      JerichoHtmlSource jerichoHtmlSourceTableBodyRow) {
+                      JerichoHtmlSource jerichoHtmlSourceTableBodyRow)
+    throws Exception {
 
         @EmptyContainerAllowed
         final ImmutableList<Element> tdElementList =
-            ImmutableList.copyOf(jerichoHtmlSourceTableBodyRow.source.getAllElements(HtmlElementTag.TD.tag));
+            jerichoHtmlParserService.getElementListByTag(
+                jerichoHtmlSourceTableBodyRow, jerichoHtmlSourceTableBodyRow.source, HtmlElementTag.TD,
+                AnyCountMatcher.INSTANCE);
 
         // Usually, the last table row is a dummy row: <tr style="display: none;"><td></td></tr>
         if (tdElementList.size() < tableHeaderToIndexMap.size()) {
@@ -294,9 +290,13 @@ implements HkplWebCheckedOutService {
     private static final Pattern PATTERN_ALREADY_RENEWED =
         Pattern.compile("^Already\\s*Renewed$", Pattern.CASE_INSENSITIVE);
 
+    private static final Pattern PATTERN_NO_NEED_TO_RENEW_TODAY =
+        Pattern.compile("^No\\s*need\\s*to\\s*renew\\s*today$", Pattern.CASE_INSENSITIVE);
+
     @Nullable
     private Element
     _tryGetRenewalCheckboxTdElement(final int rowIndex,
+                                    JerichoHtmlSource jerichoHtmlSourceTableBodyRow,
                                     ImmutableFullEnumMap<HkplWebCheckedOutTableHeader, Result.Row.TdElement>
                                         tableHeaderToTdElementMap)
     throws Exception {
@@ -307,10 +307,14 @@ implements HkplWebCheckedOutService {
         if (PATTERN_ALREADY_RENEWED.matcher(renewalCheckboxTdElement.text).find()) {
             return null;
         }
+        if (PATTERN_NO_NEED_TO_RENEW_TODAY.matcher(renewalCheckboxTdElement.text).find()) {
+            return null;
+        }
         @EmptyContainerAllowed
-        @ReadOnlyContainer
-        final List<Element> renewalCheckboxElementList =
-            renewalCheckboxTdElement.tdElement.getAllElements(HtmlElementTag.INPUT.tag);
+        final ImmutableList<Element> renewalCheckboxElementList =
+            jerichoHtmlParserService.getElementListByTag(
+                jerichoHtmlSourceTableBodyRow, renewalCheckboxTdElement.tdElement, HtmlElementTag.INPUT,
+                AtMostCountMatcher.ONE);
 
         if (1 != renewalCheckboxElementList.size()) {
 

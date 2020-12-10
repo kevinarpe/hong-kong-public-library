@@ -20,7 +20,7 @@ import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeDevToolsRuntim
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.ChromeService2;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.IncludeCommandLineAPI;
 import com.googlecode.kevinarpe.papaya.web.chrome_dev_tools.IsNullResultAllowed;
-import com.googlecode.kevinarpe.papaya.web.jericho_html.JerichoHtmlSource;
+import com.googlecode.kevinarpe.papaya.web.jericho_html_parser.JerichoHtmlSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

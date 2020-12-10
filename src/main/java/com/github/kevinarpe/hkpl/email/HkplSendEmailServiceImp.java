@@ -4,7 +4,6 @@ import com.googlecode.kevinarpe.papaya.argument.ObjectArgs;
 import com.googlecode.kevinarpe.papaya.java_mail.EmailMessageAddress;
 import com.googlecode.kevinarpe.papaya.java_mail.EmailMessageAddressListType;
 import com.googlecode.kevinarpe.papaya.java_mail.EmailMessageAddressType;
-import com.googlecode.kevinarpe.papaya.java_mail.EmailMessageBuilder;
 import com.googlecode.kevinarpe.papaya.java_mail.JavaMailSession;
 import com.googlecode.kevinarpe.papaya.java_mail.TextMimeSubType;
 
@@ -37,13 +36,14 @@ implements HkplSendEmailService {
                 String bodyText)
     throws Exception {
 
-        final EmailMessageBuilder b = javaMailSession.emailMessageBuilder();
-        b.address(EmailMessageAddressType.FROM, fromEmailAddress);
-        b.addressSet(EmailMessageAddressListType.TO).add(toEmailAddress);
-        b.subject("Hong Kong Public Library: " + subjectSuffix);
-        b.body(bodyTextMimeSubType, bodyText);
+        final MimeMessage m =
+            javaMailSession.emailMessageBuilder()
+                .address(EmailMessageAddressType.FROM, fromEmailAddress)
+                .addToAddressSet(EmailMessageAddressListType.TO, toEmailAddress)
+                .subject("Hong Kong Public Library: " + subjectSuffix)
+                .body(bodyTextMimeSubType, bodyText)
+                .build();
 
-        final MimeMessage m = b.build();
         javaMailSession.sendMessage(m);
     }
 }
